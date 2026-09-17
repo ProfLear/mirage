@@ -16,6 +16,8 @@ def test_bar_chart():
     assert "Bar Chart" in svg
     assert "Apples" in svg
     assert "Oranges" in svg
+    # Bar fills should be present and not default black
+    assert "fill: rgb(" in svg
 
     png = mirage.to_image(fig, format="png")
     assert png.startswith(b"\x89PNG")

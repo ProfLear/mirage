@@ -11,6 +11,8 @@ from PIL import ImageFont
 # Common fallback fonts across platforms
 CANDIDATE_FONTS = [
     # macOS
+    "/System/Library/Fonts/Supplemental/Verdana.ttf",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
     "/System/Library/Fonts/Helvetica.ttc",
     "/Library/Fonts/Arial.ttf",
     "/System/Library/Fonts/SFNSText.ttf",
@@ -45,15 +47,33 @@ class FontManager:
             return self._font_cache[cache_key]
 
         font = None
-        # Try specific font name if truetype lookup works
-        clean_name = family.split(",")[0].strip().strip("\"'").lower()
-        
-        # Check standard name mappings
-        try:
-            # Pillow truetype can look up installed system fonts by name on some OSes
-            font = ImageFont.truetype(clean_name, size=int_size)
-        except Exception:
-            pass
+        # Walk candidate family stack (e.g. "'Open Sans', verdana, arial, sans-serif")
+        for raw_name in family.split(","):
+            clean_name = raw_name.strip().strip("\"'").lower()
+            if not clean_name or clean_name in ("sans-serif", "serif", "monospace"):
+                continue
+
+            for test_name in (clean_name.title(), clean_name.capitalize(), clean_name):
+                try:
+                    font = ImageFont.truetype(test_name, size=int_size)
+                    if font:
+                        break
+                except Exception:
+                    pass
+            if font:
+                break
+
+            for font_path in CANDIDATE_FONTS:
+                base = os.path.basename(font_path).lower()
+                if base.startswith(clean_name) and os.path.exists(font_path):
+                    try:
+                        font = ImageFont.truetype(font_path, size=int_size)
+                        if font:
+                            break
+                    except Exception:
+                        pass
+            if font:
+                break
 
         if font is None and self._default_system_font_path:
             try:

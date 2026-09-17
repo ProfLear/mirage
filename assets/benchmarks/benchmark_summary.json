@@ -1,0 +1,236 @@
+[
+  {
+    "key": "scatter_line",
+    "category": "Core Cartesian",
+    "title": "Scatter & Line Chart",
+    "mirage_ms": 59.9,
+    "kaleido_ms": 1529.3,
+    "speedup": 25.5,
+    "image_filename": "compare_scatter_line.png"
+  },
+  {
+    "key": "bar",
+    "category": "Core Cartesian",
+    "title": "Grouped Bar Chart",
+    "mirage_ms": 47.5,
+    "kaleido_ms": 1636.6,
+    "speedup": 34.5,
+    "image_filename": "compare_bar.png"
+  },
+  {
+    "key": "pie",
+    "category": "Core Cartesian",
+    "title": "Donut / Pie Chart",
+    "mirage_ms": 49.3,
+    "kaleido_ms": 1550.5,
+    "speedup": 31.5,
+    "image_filename": "compare_pie.png"
+  },
+  {
+    "key": "box",
+    "category": "Core Cartesian",
+    "title": "Box Plot",
+    "mirage_ms": 55.6,
+    "kaleido_ms": 1549.4,
+    "speedup": 27.9,
+    "image_filename": "compare_box.png"
+  },
+  {
+    "key": "violin",
+    "category": "Core Cartesian",
+    "title": "Violin Plot",
+    "mirage_ms": 54.6,
+    "kaleido_ms": 1558.5,
+    "speedup": 28.5,
+    "image_filename": "compare_violin.png"
+  },
+  {
+    "key": "histogram",
+    "category": "Core Cartesian",
+    "title": "Frequency Histogram",
+    "mirage_ms": 38.0,
+    "kaleido_ms": 1586.0,
+    "speedup": 41.8,
+    "image_filename": "compare_histogram.png"
+  },
+  {
+    "key": "histogram2d",
+    "category": "Core Cartesian",
+    "title": "2D Density Histogram",
+    "mirage_ms": 58.3,
+    "kaleido_ms": 1594.5,
+    "speedup": 27.4,
+    "image_filename": "compare_histogram2d.png"
+  },
+  {
+    "key": "contour",
+    "category": "Core Cartesian",
+    "title": "2D Contour Plot",
+    "mirage_ms": 74.3,
+    "kaleido_ms": 1571.6,
+    "speedup": 21.1,
+    "image_filename": "compare_contour.png"
+  },
+  {
+    "key": "heatmap",
+    "category": "Core Cartesian",
+    "title": "Performance Heatmap",
+    "mirage_ms": 52.3,
+    "kaleido_ms": 1618.8,
+    "speedup": 30.9,
+    "image_filename": "compare_heatmap.png"
+  },
+  {
+    "key": "scatterternary",
+    "category": "Core Cartesian",
+    "title": "Ternary Phase Diagram",
+    "mirage_ms": 54.3,
+    "kaleido_ms": 1543.0,
+    "speedup": 28.4,
+    "image_filename": "compare_scatterternary.png"
+  },
+  {
+    "key": "candlestick",
+    "category": "Financial & Business",
+    "title": "Candlestick Stock Chart",
+    "mirage_ms": 70.9,
+    "kaleido_ms": 1528.7,
+    "speedup": 21.6,
+    "image_filename": "compare_candlestick.png"
+  },
+  {
+    "key": "ohlc",
+    "category": "Financial & Business",
+    "title": "OHLC Financial Chart",
+    "mirage_ms": 69.3,
+    "kaleido_ms": 1574.0,
+    "speedup": 22.7,
+    "image_filename": "compare_ohlc.png"
+  },
+  {
+    "key": "waterfall",
+    "category": "Financial & Business",
+    "title": "Waterfall Profit & Loss",
+    "mirage_ms": 45.0,
+    "kaleido_ms": 1525.3,
+    "speedup": 33.9,
+    "image_filename": "compare_waterfall.png"
+  },
+  {
+    "key": "funnel",
+    "category": "Financial & Business",
+    "title": "Sales Conversion Funnel",
+    "mirage_ms": 40.6,
+    "kaleido_ms": 1536.6,
+    "speedup": 37.9,
+    "image_filename": "compare_funnel.png"
+  },
+  {
+    "key": "funnelarea",
+    "category": "Financial & Business",
+    "title": "Funnel Area Analysis",
+    "mirage_ms": 41.1,
+    "kaleido_ms": 1551.5,
+    "speedup": 37.8,
+    "image_filename": "compare_funnelarea.png"
+  },
+  {
+    "key": "indicator",
+    "category": "Financial & Business",
+    "title": "KPI Performance Indicator",
+    "mirage_ms": 39.3,
+    "kaleido_ms": 1558.2,
+    "speedup": 39.7,
+    "image_filename": "compare_indicator.png"
+  },
+  {
+    "key": "treemap",
+    "category": "Hierarchical",
+    "title": "Market Cap Treemap",
+    "mirage_ms": 34.4,
+    "kaleido_ms": 1528.6,
+    "speedup": 44.4,
+    "image_filename": "compare_treemap.png"
+  },
+  {
+    "key": "sunburst",
+    "category": "Hierarchical",
+    "title": "Global Sunburst Hierarchy",
+    "mirage_ms": 39.2,
+    "kaleido_ms": 1525.7,
+    "speedup": 38.9,
+    "image_filename": "compare_sunburst.png"
+  },
+  {
+    "key": "icicle",
+    "category": "Hierarchical",
+    "title": "Icicle Partition Chart",
+    "mirage_ms": 31.1,
+    "kaleido_ms": 1536.1,
+    "speedup": 49.4,
+    "image_filename": "compare_icicle.png"
+  },
+  {
+    "key": "scatterpolar",
+    "category": "Radial & Polar",
+    "title": "Radar Performance Comparison",
+    "mirage_ms": 58.9,
+    "kaleido_ms": 1538.4,
+    "speedup": 26.1,
+    "image_filename": "compare_scatterpolar.png"
+  },
+  {
+    "key": "barpolar",
+    "category": "Radial & Polar",
+    "title": "Polar Wind Rose",
+    "mirage_ms": 46.9,
+    "kaleido_ms": 1535.5,
+    "speedup": 32.7,
+    "image_filename": "compare_barpolar.png"
+  },
+  {
+    "key": "sankey",
+    "category": "Specialized Diagrams",
+    "title": "Energy Flow Sankey Diagram",
+    "mirage_ms": 32.4,
+    "kaleido_ms": 1571.4,
+    "speedup": 48.5,
+    "image_filename": "compare_sankey.png"
+  },
+  {
+    "key": "parcats",
+    "category": "Specialized Diagrams",
+    "title": "Parallel Categories Diagram",
+    "mirage_ms": 42.9,
+    "kaleido_ms": 1576.3,
+    "speedup": 36.7,
+    "image_filename": "compare_parcats.png"
+  },
+  {
+    "key": "parcoords",
+    "category": "Specialized Diagrams",
+    "title": "Parallel Coordinates Diagram",
+    "mirage_ms": 40.9,
+    "kaleido_ms": 2689.3,
+    "speedup": 65.7,
+    "image_filename": "compare_parcoords.png"
+  },
+  {
+    "key": "table",
+    "category": "Specialized Diagrams",
+    "title": "Formatted Data Table",
+    "mirage_ms": 43.9,
+    "kaleido_ms": 1600.3,
+    "speedup": 36.5,
+    "image_filename": "compare_table.png"
+  },
+  {
+    "key": "carpet",
+    "category": "Specialized Diagrams",
+    "title": "Carpet Coordinate Plot",
+    "mirage_ms": 49.9,
+    "kaleido_ms": 1552.9,
+    "speedup": 31.1,
+    "image_filename": "compare_carpet.png"
+  }
+]

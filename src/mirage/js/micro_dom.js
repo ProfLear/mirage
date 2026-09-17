@@ -292,6 +292,11 @@
     };
     Element.prototype.setAttributeNS = function(ns, name, value) {
         this.setAttribute(name, value);
+        if (name === 'href' && ns && String(ns).indexOf('xlink') !== -1) {
+            this.setAttribute('xlink:href', value);
+        } else if (name === 'xlink:href') {
+            this.setAttribute('href', value);
+        }
     };
     Element.prototype.getAttributeNS = function(ns, name) {
         return this.getAttribute(name);
@@ -327,26 +332,65 @@
     Element.prototype.matches = function(selector) {
         if (!selector) return false;
         if (selector === '*') return true;
+        if (selector === ':first-child') {
+            if (!this.parentNode) return false;
+            for (var i = 0; i < this.parentNode.childNodes.length; i++) {
+                var ch = this.parentNode.childNodes[i];
+                if (ch.nodeType === 1) return ch === this;
+            }
+            return false;
+        }
         if (selector[0] === '#') return this.id === selector.slice(1);
         if (selector[0] === '.') {
             var cls = selector.slice(1);
             return this.classList.contains(cls);
         }
-        // Tag with class: e.g. svg.main-svg
+
+        // Attribute selector e.g. g[class^="barlayer"], [class^="barlayer"], [id="xyz"]
+        var attrMatch = selector.match(/^([a-zA-Z0-9_-]*)\[([a-zA-Z0-9_-]+)([\^$*~|]?=)?(["']?)(.*?)\4\]$/);
+        if (attrMatch) {
+            var tag = attrMatch[1];
+            var attr = attrMatch[2];
+            var op = attrMatch[3];
+            var val = attrMatch[5];
+            if (tag && this.tagName.toLowerCase() !== tag.toLowerCase()) return false;
+            if (!this.hasAttribute(attr)) return false;
+            if (!op) return true;
+            var actual = this.getAttribute(attr) || '';
+            if (op === '=') return actual === val;
+            if (op === '^=') return actual.indexOf(val) === 0;
+            if (op === '$=') return actual.slice(-val.length) === val;
+            if (op === '*=') return actual.indexOf(val) !== -1;
+            if (op === '~=') return (' ' + actual + ' ').indexOf(' ' + val + ' ') !== -1;
+            return false;
+        }
+
+        // Tag with class(es): e.g. svg.main-svg or g.trace.bars
         if (selector.indexOf('.') !== -1) {
             var parts = selector.split('.');
             var tagMatch = !parts[0] || this.tagName.toLowerCase() === parts[0].toLowerCase();
-            return tagMatch && this.classList.contains(parts[1]);
+            if (!tagMatch) return false;
+            for (var p = 1; p < parts.length; p++) {
+                if (!this.classList.contains(parts[p])) return false;
+            }
+            return true;
         }
         return this.tagName.toLowerCase() === selector.toLowerCase();
     };
 
     Element.prototype.querySelector = function(selector) {
+        if (selector === ':first-child') {
+            for (var i = 0; i < this.childNodes.length; i++) {
+                var ch = this.childNodes[i];
+                if (ch.nodeType === 1) return ch;
+            }
+            return null;
+        }
         var results = this.querySelectorAll(selector);
         return results.length > 0 ? results[0] : null;
     };
 
-    Element.prototype.querySelectorAll = function(selector) {
+    function querySelectorAllSimple(root, selector) {
         var matches = [];
         function walk(node) {
             for (var i = 0; i < node.childNodes.length; i++) {
@@ -357,8 +401,100 @@
                 }
             }
         }
-        walk(this);
+        walk(root);
         return matches;
+    }
+
+    function querySelectorAllSingle(root, selector) {
+        selector = selector.trim();
+        if (!selector) return [];
+
+        // Handle child combinators: e.g. "a > b > c"
+        if (selector.indexOf('>') !== -1) {
+            var segments = selector.split('>');
+            var current = [root];
+            for (var s = 0; s < segments.length; s++) {
+                var seg = segments[s].trim();
+                var next = [];
+                for (var c = 0; c < current.length; c++) {
+                    var parentNode = current[c];
+                    if (s === 0) {
+                        var matched = querySelectorAllSingle(parentNode, seg);
+                        for (var m = 0; m < matched.length; m++) {
+                            if (next.indexOf(matched[m]) === -1) next.push(matched[m]);
+                        }
+                    } else {
+                        for (var ch = 0; ch < parentNode.childNodes.length; ch++) {
+                            var kid = parentNode.childNodes[ch];
+                            if (kid.nodeType === 1 && kid.matches(seg)) {
+                                if (next.indexOf(kid) === -1) next.push(kid);
+                            }
+                        }
+                    }
+                }
+                current = next;
+            }
+            return current;
+        }
+
+        // Handle space descendant combinators: e.g. "a b c"
+        var inBracket = false;
+        var hasSpace = false;
+        for (var i = 0; i < selector.length; i++) {
+            if (selector[i] === '[') inBracket = true;
+            else if (selector[i] === ']') inBracket = false;
+            else if (selector[i] === ' ' && !inBracket) {
+                hasSpace = true;
+                break;
+            }
+        }
+        if (hasSpace) {
+            var tokens = [];
+            var curr = '';
+            for (var i = 0; i < selector.length; i++) {
+                if (selector[i] === '[') inBracket = true;
+                else if (selector[i] === ']') inBracket = false;
+                if (selector[i] === ' ' && !inBracket) {
+                    if (curr.trim()) tokens.push(curr.trim());
+                    curr = '';
+                } else {
+                    curr += selector[i];
+                }
+            }
+            if (curr.trim()) tokens.push(curr.trim());
+
+            var current = [root];
+            for (var t = 0; t < tokens.length; t++) {
+                var tok = tokens[t];
+                var next = [];
+                for (var c = 0; c < current.length; c++) {
+                    var descendants = querySelectorAllSimple(current[c], tok);
+                    for (var d = 0; d < descendants.length; d++) {
+                        if (next.indexOf(descendants[d]) === -1) next.push(descendants[d]);
+                    }
+                }
+                current = next;
+            }
+            return current;
+        }
+
+        return querySelectorAllSimple(root, selector);
+    }
+
+    Element.prototype.querySelectorAll = function(selector) {
+        if (!selector) return [];
+        if (selector.indexOf(',') !== -1) {
+            var parts = selector.split(',');
+            var all = [];
+            for (var p = 0; p < parts.length; p++) {
+                var res = querySelectorAllSingle(this, parts[p]);
+                for (var r = 0; r < res.length; r++) {
+                    if (all.indexOf(res[r]) === -1) all.push(res[r]);
+                }
+            }
+            return all;
+        }
+        return querySelectorAllSingle(this, selector);
     };
 
     Element.prototype.getElementsByTagName = function(tagName) {
@@ -495,6 +631,32 @@
         return this.getBBox().width;
     };
 
+    Element.prototype.getTotalLength = function() {
+        var bb = this.getBBox();
+        var p = (bb.width + bb.height) * 2;
+        return p > 0 ? p : 100;
+    };
+
+    Element.prototype.getPointAtLength = function(len) {
+        var bb = this.getBBox();
+        return { x: bb.x, y: bb.y };
+    };
+
+    var SVG_CAMEL_TAGS = {
+        'lineargradient': 'linearGradient',
+        'radialgradient': 'radialGradient',
+        'clippath': 'clipPath',
+        'textpath': 'textPath',
+        'foreignobject': 'foreignObject',
+        'animatetransform': 'animateTransform',
+        'fecolormatrix': 'feColorMatrix',
+        'fecomposite': 'feComposite',
+        'fegaussianblur': 'feGaussianBlur',
+        'femerge': 'feMerge',
+        'femergenode': 'feMergeNode',
+        'feoffset': 'feOffset'
+    };
+
     // Serialization
     function serializeNode(node) {
         if (node.nodeType === 3) {
@@ -504,17 +666,21 @@
                 .replace(/>/g, '&gt;');
         }
         if (node.nodeType === 1) {
-            var tag = node.tagName.toLowerCase();
+            var lowerTag = node.tagName.toLowerCase();
+            var tag = SVG_CAMEL_TAGS[lowerTag] || lowerTag;
             var out = '<' + tag;
+            var css = (node.style && typeof node.style.cssText === 'function') ? node.style.cssText() : '';
             for (var k in node._attributes) {
+                if (k === 'style') continue;
                 out += ' ' + k + '="' + String(node._attributes[k]).replace(/"/g, '&quot;') + '"';
             }
-            var css = node.style.cssText();
-            if (css && !node.hasAttribute('style')) {
+            if (css) {
                 out += ' style="' + css.replace(/"/g, '&quot;') + '"';
+            } else if (node._attributes['style']) {
+                out += ' style="' + String(node._attributes['style']).replace(/"/g, '&quot;') + '"';
             }
             if (node.childNodes.length === 0) {
-                if (['circle', 'path', 'line', 'rect', 'polygon', 'polyline', 'ellipse'].indexOf(tag) !== -1) {
+                if (['circle', 'path', 'line', 'rect', 'polygon', 'polyline', 'ellipse'].indexOf(lowerTag) !== -1) {
                     return out + '/>';
                 }
                 return out + '></' + tag + '>';
@@ -566,6 +732,80 @@
     }
     HTMLStyleElement.prototype = Object.create(HTMLElement.prototype);
 
+    function HTMLCanvasElement() {
+        HTMLElement.call(this, 'canvas');
+        this._width = 300;
+        this._height = 150;
+        this._ctx2d = null;
+    }
+    HTMLCanvasElement.prototype = Object.create(HTMLElement.prototype);
+    Object.defineProperty(HTMLCanvasElement.prototype, 'width', {
+        get: function() { return this._width; },
+        set: function(v) {
+            this._width = parseInt(v, 10) || 0;
+            this.setAttribute('width', this._width);
+            if (this._ctx2d) { this._ctx2d._commands = []; }
+        }
+    });
+    Object.defineProperty(HTMLCanvasElement.prototype, 'height', {
+        get: function() { return this._height; },
+        set: function(v) {
+            this._height = parseInt(v, 10) || 0;
+            this.setAttribute('height', this._height);
+            if (this._ctx2d) { this._ctx2d._commands = []; }
+        }
+    });
+    HTMLCanvasElement.prototype.getContext = function(type) {
+        if (type === '2d') {
+            if (!this._ctx2d) {
+                var self = this;
+                this._ctx2d = {
+                    canvas: self,
+                    fillStyle: '#000000',
+                    strokeStyle: '#000000',
+                    lineWidth: 1,
+                    _commands: [],
+                    fillRect: function(x, y, w, h) {
+                        this._commands.push({
+                            op: 'fillRect',
+                            x: x,
+                            y: y,
+                            w: w,
+                            h: h,
+                            fill: this.fillStyle
+                        });
+                    },
+                    clearRect: function(x, y, w, h) {
+                        this._commands.push({
+                            op: 'clearRect',
+                            x: x,
+                            y: y,
+                            w: w,
+                            h: h
+                        });
+                    },
+                    save: function() {},
+                    restore: function() {},
+                    beginPath: function() {},
+                    closePath: function() {},
+                    moveTo: function() {},
+                    lineTo: function() {},
+                    stroke: function() {},
+                    fill: function() {}
+                };
+            }
+            return this._ctx2d;
+        }
+        return null;
+    };
+    HTMLCanvasElement.prototype.toDataURL = function(type) {
+        if (typeof globalScope._encodeCanvasToPNG === 'function') {
+            var cmds = this._ctx2d ? this._ctx2d._commands : [];
+            return globalScope._encodeCanvasToPNG(this.width, this.height, JSON.stringify(cmds));
+        }
+        return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    };
+
     // --- Document ---
     function Document() {
         Node.call(this);
@@ -588,6 +828,7 @@
         var lower = String(tag).toLowerCase();
         var el;
         if (lower === 'style') el = new HTMLStyleElement();
+        else if (lower === 'canvas') el = new HTMLCanvasElement();
         else el = new HTMLElement(lower);
         el.ownerDocument = this;
         return el;
@@ -659,6 +900,7 @@
     globalScope.Node = Node;
     globalScope.Element = Element;
     globalScope.HTMLElement = HTMLElement;
+    globalScope.HTMLCanvasElement = HTMLCanvasElement;
     globalScope.SVGElement = SVGElement;
     globalScope.DocumentFragment = DocumentFragment;
     globalScope.Text = Text;

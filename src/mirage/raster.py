@@ -3,9 +3,42 @@
 from __future__ import annotations
 
 import io
+import os
+import re
 from typing import Union, BinaryIO
 import resvg_py
 from PIL import Image
+
+SYSTEM_FONT_DIRS = [
+    "/System/Library/Fonts/Supplemental",
+    "/Library/Fonts",
+    "/System/Library/Fonts",
+    "/usr/share/fonts",
+    "/usr/local/share/fonts",
+]
+EXISTING_FONT_DIRS = [d for d in SYSTEM_FONT_DIRS if os.path.isdir(d)]
+
+COMMON_FONT_NAMES = [
+    "verdana",
+    "arial",
+    "tahoma",
+    "trebuchet ms",
+    "helvetica",
+    "times new roman",
+    "courier new",
+    "georgia",
+]
+
+
+def _normalize_svg_fonts(svg: str) -> str:
+    """Normalize font-family names to match case-sensitive font db lookups."""
+    def _cap(m: re.Match) -> str:
+        val = m.group(0)
+        for name in COMMON_FONT_NAMES:
+            val = re.sub(r"\b" + re.escape(name) + r"\b", name.title(), val, flags=re.IGNORECASE)
+        return val
+
+    return re.sub(r"font-family:\s*[^;\"}]+", _cap, svg)
 
 
 def svg_to_png(
@@ -15,9 +48,12 @@ def svg_to_png(
     scale: float = 1.0,
 ) -> bytes:
     """Rasterize an SVG string into PNG bytes using resvg-py."""
-    # resvg_py expects SVG bytes or string
-    # Let's inspect resvg_py.svg_to_bytes options or pillow resizing if needed
-    png_bytes = resvg_py.svg_to_bytes(svg)
+    normalized_svg = _normalize_svg_fonts(svg)
+    if EXISTING_FONT_DIRS:
+        png_bytes = resvg_py.svg_to_bytes(normalized_svg, font_dirs=EXISTING_FONT_DIRS)
+    else:
+        png_bytes = resvg_py.svg_to_bytes(normalized_svg)
+
     if scale != 1.0 or width is not None or height is not None:
         img = Image.open(io.BytesIO(png_bytes))
         target_w = width if width is not None else int(round(img.width * scale))

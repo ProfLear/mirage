@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import base64
+import io
 import json
 import os
+import re
 import threading
 from typing import Any, Dict, List, Optional
+from PIL import Image, ImageColor, ImageDraw
 import quickjs
 
 from mirage.fonts import get_default_font_manager
@@ -13,9 +17,65 @@ from mirage.fonts import get_default_font_manager
 
 _JS_DIR = os.path.join(os.path.dirname(__file__), "js")
 _MICRO_DOM_PATH = os.path.join(_JS_DIR, "micro_dom.js")
+_PLOTLY_COMPREHENSIVE_PATH = os.path.join(_JS_DIR, "plotly_comprehensive_2d.js")
+_PLOTLY_CARTESIAN_PATH = os.path.join(_JS_DIR, "plotly_cartesian.js")
 _PLOTLY_BASIC_PATH = os.path.join(_JS_DIR, "plotly_basic.js")
 
+if os.path.exists(_PLOTLY_COMPREHENSIVE_PATH):
+    _BUNDLE_PATH = _PLOTLY_COMPREHENSIVE_PATH
+elif os.path.exists(_PLOTLY_CARTESIAN_PATH):
+    _BUNDLE_PATH = _PLOTLY_CARTESIAN_PATH
+else:
+    _BUNDLE_PATH = _PLOTLY_BASIC_PATH
+
 _ENGINE_THREAD_LOCAL = threading.local()
+
+
+def _parse_color(c: str) -> tuple[int, int, int, int] | tuple[int, int, int]:
+    if not c:
+        return (0, 0, 0, 0)
+    c = c.strip()
+    m = re.match(r"rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)", c, re.I)
+    if m:
+        r, g, b = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        a = int(float(m.group(4)) * 255) if m.group(4) is not None else 255
+        return (r, g, b, a)
+    try:
+        return ImageColor.getrgb(c)
+    except Exception:
+        return (0, 0, 0, 255)
+
+
+def _encode_canvas_to_png(width: int, height: int, commands_json: str) -> str:
+    w = max(1, int(width))
+    h = max(1, int(height))
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    try:
+        commands = json.loads(commands_json)
+    except Exception:
+        commands = []
+
+    for cmd in commands:
+        op = cmd.get("op")
+        if op == "fillRect":
+            x = cmd.get("x", 0)
+            y = cmd.get("y", 0)
+            cw = cmd.get("w", 0)
+            ch = cmd.get("h", 0)
+            fill = _parse_color(cmd.get("fill", "#000000"))
+            draw.rectangle([x, y, x + cw, y + ch], fill=fill)
+        elif op == "clearRect":
+            x = cmd.get("x", 0)
+            y = cmd.get("y", 0)
+            cw = cmd.get("w", 0)
+            ch = cmd.get("h", 0)
+            draw.rectangle([x, y, x + cw, y + ch], fill=(0, 0, 0, 0))
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{b64}"
 
 
 class MirageEngine:
@@ -26,14 +86,15 @@ class MirageEngine:
         self.context = quickjs.Context()
         self.context.set_max_stack_size(10 * 1024 * 1024)
 
-        # Register font measurement callback
+        # Register callbacks
         self.context.add_callable("_measureTextRaw", self.font_manager.measure_raw)
+        self.context.add_callable("_encodeCanvasToPNG", _encode_canvas_to_png)
 
         # Load JavaScript assets
         with open(_MICRO_DOM_PATH, "r", encoding="utf-8") as f:
             micro_dom_js = f.read()
 
-        with open(_PLOTLY_BASIC_PATH, "r", encoding="utf-8") as f:
+        with open(_BUNDLE_PATH, "r", encoding="utf-8") as f:
             plotly_js = f.read()
 
         self.context.eval(micro_dom_js)
@@ -61,19 +122,35 @@ class MirageEngine:
 
             try {
                 Plotly.newPlot(container, data, layout, { staticPlot: true });
-                var svgs = container.querySelectorAll('svg');
-                if (svgs.length === 0) return null;
-                var mainSvg = svgs[0];
-                for (var s = 1; s < svgs.length; s++) {
-                    var otherSvg = svgs[s];
-                    var kids = otherSvg.childNodes.slice();
-                    for (var k = 0; k < kids.length; k++) {
-                        var kid = kids[k];
-                        if (kid.nodeType === 1 && kid.classList && kid.classList.contains('hoverlayer')) continue;
-                        mainSvg.appendChild(kid);
+                var res = null;
+                if (Plotly.Snapshot && typeof Plotly.Snapshot.toSVG === 'function') {
+                    try {
+                        res = Plotly.Snapshot.toSVG(container, 'svg');
+                    } catch(snapErr) {
+                        // fallback to manual extraction if snapshot fails
                     }
                 }
-                var res = mainSvg.outerHTML;
+                if (!res) {
+                    var svgs = container.querySelectorAll('svg');
+                    if (svgs.length === 0) {
+                        document.body.removeChild(container);
+                        return null;
+                    }
+                    var mainSvg = svgs[0];
+                    for (var s = 1; s < svgs.length; s++) {
+                        var otherSvg = svgs[s];
+                        var kids = otherSvg.childNodes.slice();
+                        for (var k = 0; k < kids.length; k++) {
+                            var kid = kids[k];
+                            if (kid.nodeType === 1 && kid.classList && kid.classList.contains('hoverlayer')) continue;
+                            mainSvg.appendChild(kid);
+                        }
+                    }
+                    res = mainSvg.outerHTML;
+                }
+                if (res) {
+                    res = res.replace(/TOBESTRIPPED/g, "'");
+                }
                 document.body.removeChild(container);
                 return res;
             } catch(e) {

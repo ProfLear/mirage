@@ -35,3 +35,7 @@ htmlcov/
 *.jpg
 *.jpeg
 *.webp
+
+# Keep documentation and benchmark assets
+!assets/
+!assets/**
