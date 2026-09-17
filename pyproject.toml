@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ProfLear/PlotlyHTMLtoSVG"
+Homepage = "https://github.com/ProfLear/mirage"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mirage"]
