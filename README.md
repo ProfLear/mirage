@@ -66,6 +66,16 @@ Plotly's Python figures are JSON specifications. The actual layout math, coordin
 
 ## Installation
 
+### From GitHub (Pre-PyPI / Development)
+```bash
+pip install git+https://github.com/ProfLear/mirage.git
+```
+Or for local development:
+```bash
+pip install -e .
+```
+
+### From PyPI (Upcoming)
 ```bash
 pip install plotly-mirage
 ```
