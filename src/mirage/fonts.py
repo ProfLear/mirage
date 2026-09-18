@@ -11,11 +11,11 @@ from PIL import ImageFont
 # Common fallback fonts across platforms
 CANDIDATE_FONTS = [
     # macOS
-    "/System/Library/Fonts/Supplemental/Verdana.ttf",
     "/System/Library/Fonts/Supplemental/Arial.ttf",
     "/System/Library/Fonts/Helvetica.ttc",
     "/Library/Fonts/Arial.ttf",
     "/System/Library/Fonts/SFNSText.ttf",
+    "/System/Library/Fonts/Supplemental/Verdana.ttf",
     # Linux
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
@@ -48,8 +48,14 @@ class FontManager:
 
         font = None
         # Walk candidate family stack (e.g. "'Open Sans', verdana, arial, sans-serif")
-        for raw_name in family.split(","):
-            clean_name = raw_name.strip().strip("\"'").lower()
+        names = [r.strip().strip("\"'").lower() for r in family.split(",")]
+        # When legacy 'verdana' is present in the Plotly default stack alongside sans-serif or arial,
+        # prioritize standard proportional sans (Arial/Helvetica) matching Chrome / resvg layout.
+        if "verdana" in names and ("arial" in names or "sans-serif" in names or "open sans" in names):
+            names.remove("verdana")
+            names.append("verdana")
+
+        for clean_name in names:
             if not clean_name or clean_name in ("sans-serif", "serif", "monospace"):
                 continue
 
@@ -110,14 +116,22 @@ class FontManager:
 
         try:
             bbox = font.getbbox(text)
+            try:
+                metrics = font.getmetrics()
+                ascent_val = float(metrics[0])
+                descent_val = float(metrics[1])
+                h = max(ascent_val + descent_val, float(int_size * 1.2))
+                ascent = ascent_val if ascent_val > 0 else float(int_size * 0.8)
+                descent = descent_val if descent_val > 0 else float(int_size * 0.2)
+            except Exception:
+                h = float(int_size * 1.2)
+                ascent = float(int_size * 0.8)
+                descent = float(int_size * 0.2)
+
             if bbox:
                 w = max(length, float(bbox[2] - bbox[0]))
-                h = max(float(int_size), float(bbox[3] - bbox[1]))
-                ascent = float(-bbox[1]) if bbox[1] < 0 else float(int_size * 0.8)
-                descent = float(bbox[3] - int_size * 0.8) if bbox[3] > int_size * 0.8 else 0.0
             else:
-                w, h = length, float(int_size * 1.2)
-                ascent, descent = float(int_size * 0.8), float(int_size * 0.2)
+                w = length
         except Exception:
             w, h = length, float(int_size * 1.2)
             ascent, descent = float(int_size * 0.8), float(int_size * 0.2)

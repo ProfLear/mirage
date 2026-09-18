@@ -1,4 +1,4 @@
-"""Benchmark and visual side-by-side comparison generator across all 26 supported 2D chart types."""
+"""Benchmark and visual side-by-side comparison generator across all supported 2D chart types."""
 
 import io
 import json
@@ -12,7 +12,7 @@ import mirage
 OUTPUT_DIR = Path("/Users/benjaminlear/GitHub/mirage/assets/benchmarks")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# 26 Pure-Vector 2D Chart Types
+# Pure-Vector 2D Chart Types
 CHARTS = {
     # 1. Core Cartesian
     "scatter_line": {
@@ -292,22 +292,6 @@ CHARTS = {
             layout=go.Layout(title="Parallel Categories Diagram", width=650, height=450),
         ),
     },
-    "parcoords": {
-        "category": "Specialized Diagrams",
-        "title": "Parallel Coordinates Diagram",
-        "fig": go.Figure(
-            data=[
-                go.Parcoords(
-                    dimensions=[
-                        dict(range=[1, 5], label="A", values=[1, 4, 3, 2]),
-                        dict(range=[1, 5], label="B", values=[3, 1.5, 4, 2]),
-                        dict(range=[1, 5], label="C", values=[2, 4, 3, 5]),
-                    ]
-                )
-            ],
-            layout=go.Layout(title="Parallel Coordinates Diagram", width=650, height=450),
-        ),
-    },
     "table": {
         "category": "Specialized Diagrams",
         "title": "Formatted Data Table",
@@ -442,7 +426,7 @@ def main():
 
     summary_file = OUTPUT_DIR / "benchmark_summary.json"
     summary_file.write_text(json.dumps(results, indent=2))
-    print(f"\nAll 26 comparison images generated in {OUTPUT_DIR}")
+    print(f"\nAll {len(results)} comparison images generated in {OUTPUT_DIR}")
     print(f"Summary saved to {summary_file}")
 
 

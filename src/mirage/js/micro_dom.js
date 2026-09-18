@@ -5,6 +5,9 @@
     'use strict';
 
     var globalScope = typeof globalThis !== 'undefined' ? globalThis : this;
+    if (typeof globalScope.process === 'undefined') {
+        globalScope.process = { env: { NODE_ENV: 'production' }, browser: true, version: '' };
+    }
 
     // --- Helpers ---
     function camelToDashed(str) {
@@ -227,9 +230,16 @@
     function Element(tagName, namespaceURI) {
         Node.call(this);
         this.nodeType = 1;
-        this.tagName = String(tagName).toUpperCase();
-        this.nodeName = this.tagName;
         this.namespaceURI = namespaceURI || null;
+        var tagStr = String(tagName);
+        if (this.namespaceURI === 'http://www.w3.org/2000/svg') {
+            var lower = tagStr.toLowerCase();
+            this.tagName = SVG_CAMEL_TAGS[lower] || lower;
+            this.nodeName = this.tagName;
+        } else {
+            this.tagName = tagStr.toUpperCase();
+            this.nodeName = this.tagName;
+        }
         this._attributes = {};
         this.style = createStyle(this);
         this.classList = new ClassList(this);
@@ -537,16 +547,121 @@
         return { x: 0, y: 0 };
     }
 
+    function getTextAnchor(node) {
+        var cur = node;
+        while (cur && cur.nodeType === 1) {
+            var anchor = cur.style ? (cur.style.getPropertyValue('text-anchor') || cur.getAttribute('text-anchor')) : null;
+            if (anchor) return anchor.trim().toLowerCase();
+            cur = cur.parentNode;
+        }
+        return 'start';
+    }
+
     Element.prototype.getBBox = function() {
         var tag = this.tagName.toLowerCase();
         var x = parseFloat(this.getAttribute('x')) || 0;
         var y = parseFloat(this.getAttribute('y')) || 0;
+
+        if (tag === 'text') {
+            // Check if <text> contains child <tspan> elements (e.g. multi-line text)
+            var tspans = [];
+            for (var i = 0; i < this.childNodes.length; i++) {
+                var ch = this.childNodes[i];
+                if (ch.nodeType === 1 && ch.tagName.toLowerCase() === 'tspan') {
+                    tspans.push(ch);
+                }
+            }
+
+            if (tspans.length > 0) {
+                var parentFontSize = parseFloat(this.style.getPropertyValue('font-size') || this.getAttribute('font-size')) || 12;
+                var parentFontFamily = this.style.getPropertyValue('font-family') || this.getAttribute('font-family') || 'sans-serif';
+                var parentFontWeight = this.style.getPropertyValue('font-weight') || this.getAttribute('font-weight') || 'normal';
+                var parentAnchor = getTextAnchor(this);
+                var baseX = x;
+                var baseY = y;
+
+                var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                var curY = baseY;
+
+                for (var j = 0; j < tspans.length; j++) {
+                    var tsp = tspans[j];
+                    var tText = tsp.textContent || '';
+                    var tFontSize = parseFloat(tsp.style.getPropertyValue('font-size') || tsp.getAttribute('font-size')) || parentFontSize;
+                    var tFontFamily = tsp.style.getPropertyValue('font-family') || tsp.getAttribute('font-family') || parentFontFamily;
+                    var tFontWeight = tsp.style.getPropertyValue('font-weight') || tsp.getAttribute('font-weight') || parentFontWeight;
+                    var tAnchor = (tsp.style.getPropertyValue('text-anchor') || tsp.getAttribute('text-anchor') || parentAnchor).trim().toLowerCase();
+
+                    var tx = tsp.hasAttribute('x') ? (parseFloat(tsp.getAttribute('x')) || 0) : baseX;
+                    if (tsp.hasAttribute('y')) {
+                        curY = parseFloat(tsp.getAttribute('y')) || 0;
+                    }
+                    if (tsp.hasAttribute('dy')) {
+                        var dyStr = tsp.getAttribute('dy') || '';
+                        var dyVal = 0;
+                        if (dyStr.indexOf('em') !== -1) {
+                            dyVal = parseFloat(dyStr) * tFontSize;
+                        } else {
+                            dyVal = parseFloat(dyStr) || 0;
+                        }
+                        curY += dyVal;
+                    }
+
+                    var tw = 0, th = tFontSize * 1.2, ta = tFontSize * 0.8;
+                    if (typeof globalScope._measureTextRaw === 'function') {
+                        try {
+                            var raw = globalScope._measureTextRaw(tText, tFontFamily, String(tFontSize), tFontWeight);
+                            var parts = raw.split(',');
+                            tw = parseFloat(parts[0]) || 0;
+                            th = parseFloat(parts[1]) || (tFontSize * 1.2);
+                            ta = parseFloat(parts[2]) || (tFontSize * 0.8);
+                        } catch(e) {
+                            tw = tText.length * tFontSize * 0.6;
+                        }
+                    } else {
+                        tw = tText.length * tFontSize * 0.6;
+                    }
+
+                    var tMinX;
+                    if (tAnchor === 'middle') {
+                        tMinX = tx - tw / 2;
+                    } else if (tAnchor === 'end') {
+                        tMinX = tx - tw;
+                    } else {
+                        tMinX = tx;
+                    }
+                    var tMaxX = tMinX + tw;
+                    var tMinY = curY - ta;
+                    var tMaxY = tMinY + th;
+
+                    if (tMinX < minX) minX = tMinX;
+                    if (tMinY < minY) minY = tMinY;
+                    if (tMaxX > maxX) maxX = tMaxX;
+                    if (tMaxY > maxY) maxY = tMaxY;
+                }
+
+                if (minX !== Infinity) {
+                    var w = maxX - minX;
+                    var h = maxY - minY;
+                    return {
+                        x: minX,
+                        y: minY,
+                        width: w,
+                        height: h,
+                        left: minX,
+                        top: minY,
+                        right: maxX,
+                        bottom: maxY
+                    };
+                }
+            }
+        }
 
         if (tag === 'text' || tag === 'tspan') {
             var text = this.textContent || '';
             var fontSize = parseFloat(this.style.getPropertyValue('font-size') || this.getAttribute('font-size')) || 12;
             var fontFamily = this.style.getPropertyValue('font-family') || this.getAttribute('font-family') || 'sans-serif';
             var fontWeight = this.style.getPropertyValue('font-weight') || this.getAttribute('font-weight') || 'normal';
+            var anchor = getTextAnchor(this);
 
             var w = 0, h = fontSize * 1.2, a = fontSize * 0.8, d = fontSize * 0.2;
             if (typeof globalScope._measureTextRaw === 'function') {
@@ -563,14 +678,24 @@
             } else {
                 w = text.length * fontSize * 0.6;
             }
+
+            var minX;
+            if (anchor === 'middle') {
+                minX = x - w / 2;
+            } else if (anchor === 'end') {
+                minX = x - w;
+            } else {
+                minX = x;
+            }
+
             return {
-                x: x,
+                x: minX,
                 y: y - a,
                 width: w,
                 height: h,
-                left: x,
+                left: minX,
                 top: y - a,
-                right: x + w,
+                right: minX + w,
                 bottom: y - a + h
             };
         }
@@ -613,8 +738,20 @@
 
     Element.prototype.getBoundingClientRect = function() {
         var bb = this.getBBox();
-        var left = (this.offsetLeft || 0) + bb.x;
-        var top = (this.offsetTop || 0) + bb.y;
+        var cur = this;
+        var tx = 0, ty = 0;
+        while (cur && cur.nodeType === 1) {
+            if (cur.offsetLeft) tx += cur.offsetLeft;
+            if (cur.offsetTop) ty += cur.offsetTop;
+            var tr = cur.getAttribute ? parseTranslate(cur.getAttribute('transform')) : null;
+            if (tr) {
+                tx += tr.x;
+                ty += tr.y;
+            }
+            cur = cur.parentNode;
+        }
+        var left = tx + bb.x;
+        var top = ty + bb.y;
         var width = this.offsetWidth || this.clientWidth || bb.width;
         var height = this.offsetHeight || this.clientHeight || bb.height;
         return {

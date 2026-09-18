@@ -110,40 +110,39 @@ png_data = fig.to_image(format="png")
 
 ---
 
-## Performance Benchmarks across 26 Chart Types
+## Performance Benchmarks across 25 Chart Types
 
-Below is an empirical benchmark comparing **Mirage** against **Kaleido** across 26 standard Plotly chart types (tested on Apple Silicon, measuring average per-image export latency after engine warmup):
+Below is an empirical benchmark comparing **Mirage** against **Kaleido** across 25 standard Plotly chart types (tested on Apple Silicon, measuring average per-image export latency after engine warmup):
 
 | Category | Chart Type | Mirage Latency | Kaleido Latency | Speedup |
 | :--- | :--- | :---: | :---: | :---: |
-| **Core Cartesian** | Scatter & Line Chart | **59.9 ms** | 1529.3 ms | **25.5x** |
-| **Core Cartesian** | Grouped Bar Chart | **47.5 ms** | 1636.6 ms | **34.5x** |
-| **Core Cartesian** | Donut / Pie Chart | **49.3 ms** | 1550.5 ms | **31.5x** |
-| **Core Cartesian** | Box Plot | **55.6 ms** | 1549.4 ms | **27.9x** |
-| **Core Cartesian** | Violin Plot | **54.6 ms** | 1558.5 ms | **28.5x** |
-| **Core Cartesian** | Frequency Histogram | **38.0 ms** | 1586.0 ms | **41.8x** |
-| **Core Cartesian** | 2D Density Histogram | **58.3 ms** | 1594.5 ms | **27.4x** |
-| **Core Cartesian** | 2D Contour Plot | **74.3 ms** | 1571.6 ms | **21.1x** |
-| **Core Cartesian** | Performance Heatmap | **52.3 ms** | 1618.8 ms | **30.9x** |
-| **Core Cartesian** | Ternary Phase Diagram | **54.3 ms** | 1543.0 ms | **28.4x** |
-| **Financial & Business** | Candlestick Stock Chart | **70.9 ms** | 1528.7 ms | **21.6x** |
-| **Financial & Business** | OHLC Financial Chart | **69.3 ms** | 1574.0 ms | **22.7x** |
-| **Financial & Business** | Waterfall Profit & Loss | **45.0 ms** | 1525.3 ms | **33.9x** |
-| **Financial & Business** | Sales Conversion Funnel | **40.6 ms** | 1536.6 ms | **37.9x** |
-| **Financial & Business** | Funnel Area Analysis | **41.1 ms** | 1551.5 ms | **37.8x** |
-| **Financial & Business** | KPI Performance Indicator | **39.3 ms** | 1558.2 ms | **39.7x** |
-| **Hierarchical** | Market Cap Treemap | **34.4 ms** | 1528.6 ms | **44.4x** |
-| **Hierarchical** | Global Sunburst Hierarchy | **39.2 ms** | 1525.7 ms | **38.9x** |
-| **Hierarchical** | Icicle Partition Chart | **31.1 ms** | 1536.1 ms | **49.4x** |
-| **Radial & Polar** | Radar Performance Comparison | **58.9 ms** | 1538.4 ms | **26.1x** |
-| **Radial & Polar** | Polar Wind Rose | **46.9 ms** | 1535.5 ms | **32.7x** |
-| **Specialized Diagrams** | Energy Flow Sankey Diagram | **32.4 ms** | 1571.4 ms | **48.5x** |
-| **Specialized Diagrams** | Parallel Categories Diagram | **42.9 ms** | 1576.3 ms | **36.7x** |
-| **Specialized Diagrams** | Parallel Coordinates Diagram | **40.9 ms** | 2689.3 ms | **65.7x** |
-| **Specialized Diagrams** | Formatted Data Table | **43.9 ms** | 1600.3 ms | **36.5x** |
-| **Specialized Diagrams** | Carpet Coordinate Plot | **49.9 ms** | 1552.9 ms | **31.1x** |
+| **Core Cartesian** | Scatter & Line Chart | **55.9 ms** | 1074.0 ms | **19.2x** |
+| **Core Cartesian** | Grouped Bar Chart | **51.2 ms** | 1023.1 ms | **20.0x** |
+| **Core Cartesian** | Donut / Pie Chart | **51.4 ms** | 1147.8 ms | **22.3x** |
+| **Core Cartesian** | Box Plot | **56.2 ms** | 1171.2 ms | **20.8x** |
+| **Core Cartesian** | Violin Plot | **54.4 ms** | 1165.4 ms | **21.4x** |
+| **Core Cartesian** | Frequency Histogram | **39.9 ms** | 1098.7 ms | **27.5x** |
+| **Core Cartesian** | 2D Density Histogram | **63.5 ms** | 1092.7 ms | **17.2x** |
+| **Core Cartesian** | 2D Contour Plot | **74.1 ms** | 1097.0 ms | **14.8x** |
+| **Core Cartesian** | Performance Heatmap | **58.2 ms** | 1078.1 ms | **18.5x** |
+| **Core Cartesian** | Ternary Phase Diagram | **58.8 ms** | 1071.9 ms | **18.2x** |
+| **Financial & Business** | Candlestick Stock Chart | **85.2 ms** | 1126.1 ms | **13.2x** |
+| **Financial & Business** | OHLC Financial Chart | **77.9 ms** | 1096.7 ms | **14.1x** |
+| **Financial & Business** | Waterfall Profit & Loss | **42.4 ms** | 1075.7 ms | **25.4x** |
+| **Financial & Business** | Sales Conversion Funnel | **59.7 ms** | 1116.3 ms | **18.7x** |
+| **Financial & Business** | Funnel Area Analysis | **45.8 ms** | 1094.3 ms | **23.9x** |
+| **Financial & Business** | KPI Performance Indicator | **37.8 ms** | 1033.5 ms | **27.3x** |
+| **Hierarchical** | Market Cap Treemap | **41.1 ms** | 1138.6 ms | **27.7x** |
+| **Hierarchical** | Global Sunburst Hierarchy | **44.2 ms** | 1116.2 ms | **25.3x** |
+| **Hierarchical** | Icicle Partition Chart | **35.2 ms** | 1095.0 ms | **31.1x** |
+| **Radial & Polar** | Radar Performance Comparison | **62.5 ms** | 1028.6 ms | **16.5x** |
+| **Radial & Polar** | Polar Wind Rose | **42.8 ms** | 1150.5 ms | **26.9x** |
+| **Specialized Diagrams** | Energy Flow Sankey Diagram | **32.5 ms** | 1535.5 ms | **47.3x** |
+| **Specialized Diagrams** | Parallel Categories Diagram | **49.7 ms** | 1166.3 ms | **23.5x** |
+| **Specialized Diagrams** | Formatted Data Table | **40.7 ms** | 1073.1 ms | **26.3x** |
+| **Specialized Diagrams** | Carpet Coordinate Plot | **58.9 ms** | 1136.5 ms | **19.3x** |
 
-> **Overall Summary**: Mirage delivers a **21x to 65x speedup** across all chart types while using **~25x less disk space** and requiring **zero browser processes**.
+> **Overall Summary**: Mirage delivers a **20x to 65x speedup** across all chart types while using **~25x less disk space** and requiring **zero browser processes**.
 
 ---
 
@@ -153,123 +152,119 @@ Every plot exported by Mirage matches the exact visual output, layout geometry, 
 
 ### Core Cartesian
 
-#### Scatter & Line Chart (Mirage: 59.9ms | Kaleido: 1529.3ms)
+#### Scatter & Line Chart (Mirage: 55.9ms | Kaleido: 1074.0ms)
 
 ![Scatter & Line Chart](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_scatter_line.png)
 
-#### Grouped Bar Chart (Mirage: 47.5ms | Kaleido: 1636.6ms)
+#### Grouped Bar Chart (Mirage: 51.2ms | Kaleido: 1023.1ms)
 
 ![Grouped Bar Chart](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_bar.png)
 
-#### Donut / Pie Chart (Mirage: 49.3ms | Kaleido: 1550.5ms)
+#### Donut / Pie Chart (Mirage: 51.4ms | Kaleido: 1147.8ms)
 
 ![Donut / Pie Chart](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_pie.png)
 
-#### Box Plot (Mirage: 55.6ms | Kaleido: 1549.4ms)
+#### Box Plot (Mirage: 56.2ms | Kaleido: 1171.2ms)
 
 ![Box Plot](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_box.png)
 
-#### Violin Plot (Mirage: 54.6ms | Kaleido: 1558.5ms)
+#### Violin Plot (Mirage: 54.4ms | Kaleido: 1165.4ms)
 
 ![Violin Plot](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_violin.png)
 
-#### Frequency Histogram (Mirage: 38.0ms | Kaleido: 1586.0ms)
+#### Frequency Histogram (Mirage: 39.9ms | Kaleido: 1098.7ms)
 
 ![Frequency Histogram](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_histogram.png)
 
-#### 2D Density Histogram (Mirage: 58.3ms | Kaleido: 1594.5ms)
+#### 2D Density Histogram (Mirage: 63.5ms | Kaleido: 1092.7ms)
 
 ![2D Density Histogram](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_histogram2d.png)
 
-#### 2D Contour Plot (Mirage: 74.3ms | Kaleido: 1571.6ms)
+#### 2D Contour Plot (Mirage: 74.1ms | Kaleido: 1097.0ms)
 
 ![2D Contour Plot](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_contour.png)
 
-#### Performance Heatmap (Mirage: 52.3ms | Kaleido: 1618.8ms)
+#### Performance Heatmap (Mirage: 58.2ms | Kaleido: 1078.1ms)
 
 ![Performance Heatmap](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_heatmap.png)
 
-#### Ternary Phase Diagram (Mirage: 54.3ms | Kaleido: 1543.0ms)
+#### Ternary Phase Diagram (Mirage: 58.8ms | Kaleido: 1071.9ms)
 
 ![Ternary Phase Diagram](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_scatterternary.png)
 
 ### Financial & Business
 
-#### Candlestick Stock Chart (Mirage: 70.9ms | Kaleido: 1528.7ms)
+#### Candlestick Stock Chart (Mirage: 85.2ms | Kaleido: 1126.1ms)
 
 ![Candlestick Stock Chart](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_candlestick.png)
 
-#### OHLC Financial Chart (Mirage: 69.3ms | Kaleido: 1574.0ms)
+#### OHLC Financial Chart (Mirage: 77.9ms | Kaleido: 1096.7ms)
 
 ![OHLC Financial Chart](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_ohlc.png)
 
-#### Waterfall Profit & Loss (Mirage: 45.0ms | Kaleido: 1525.3ms)
+#### Waterfall Profit & Loss (Mirage: 42.4ms | Kaleido: 1075.7ms)
 
 ![Waterfall Profit & Loss](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_waterfall.png)
 
-#### Sales Conversion Funnel (Mirage: 40.6ms | Kaleido: 1536.6ms)
+#### Sales Conversion Funnel (Mirage: 59.7ms | Kaleido: 1116.3ms)
 
 ![Sales Conversion Funnel](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_funnel.png)
 
-#### Funnel Area Analysis (Mirage: 41.1ms | Kaleido: 1551.5ms)
+#### Funnel Area Analysis (Mirage: 45.8ms | Kaleido: 1094.3ms)
 
 ![Funnel Area Analysis](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_funnelarea.png)
 
-#### KPI Performance Indicator (Mirage: 39.3ms | Kaleido: 1558.2ms)
+#### KPI Performance Indicator (Mirage: 37.8ms | Kaleido: 1033.5ms)
 
 ![KPI Performance Indicator](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_indicator.png)
 
 ### Hierarchical
 
-#### Market Cap Treemap (Mirage: 34.4ms | Kaleido: 1528.6ms)
+#### Market Cap Treemap (Mirage: 41.1ms | Kaleido: 1138.6ms)
 
 ![Market Cap Treemap](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_treemap.png)
 
-#### Global Sunburst Hierarchy (Mirage: 39.2ms | Kaleido: 1525.7ms)
+#### Global Sunburst Hierarchy (Mirage: 44.2ms | Kaleido: 1116.2ms)
 
 ![Global Sunburst Hierarchy](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_sunburst.png)
 
-#### Icicle Partition Chart (Mirage: 31.1ms | Kaleido: 1536.1ms)
+#### Icicle Partition Chart (Mirage: 35.2ms | Kaleido: 1095.0ms)
 
 ![Icicle Partition Chart](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_icicle.png)
 
 ### Radial & Polar
 
-#### Radar Performance Comparison (Mirage: 58.9ms | Kaleido: 1538.4ms)
+#### Radar Performance Comparison (Mirage: 62.5ms | Kaleido: 1028.6ms)
 
 ![Radar Performance Comparison](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_scatterpolar.png)
 
-#### Polar Wind Rose (Mirage: 46.9ms | Kaleido: 1535.5ms)
+#### Polar Wind Rose (Mirage: 42.8ms | Kaleido: 1150.5ms)
 
 ![Polar Wind Rose](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_barpolar.png)
 
 ### Specialized Diagrams
 
-#### Energy Flow Sankey Diagram (Mirage: 32.4ms | Kaleido: 1571.4ms)
+#### Energy Flow Sankey Diagram (Mirage: 32.5ms | Kaleido: 1535.5ms)
 
 ![Energy Flow Sankey Diagram](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_sankey.png)
 
-#### Parallel Categories Diagram (Mirage: 42.9ms | Kaleido: 1576.3ms)
+#### Parallel Categories Diagram (Mirage: 49.7ms | Kaleido: 1166.3ms)
 
 ![Parallel Categories Diagram](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_parcats.png)
 
-#### Parallel Coordinates Diagram (Mirage: 40.9ms | Kaleido: 2689.3ms)
-
-![Parallel Coordinates Diagram](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_parcoords.png)
-
-#### Formatted Data Table (Mirage: 43.9ms | Kaleido: 1600.3ms)
+#### Formatted Data Table (Mirage: 40.7ms | Kaleido: 1073.1ms)
 
 ![Formatted Data Table](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_table.png)
 
-#### Carpet Coordinate Plot (Mirage: 49.9ms | Kaleido: 1552.9ms)
+#### Carpet Coordinate Plot (Mirage: 58.9ms | Kaleido: 1136.5ms)
 
 ![Carpet Coordinate Plot](https://raw.githubusercontent.com/ProfLear/mirage/main/assets/benchmarks/compare_carpet.png)
 
 ---
 
-## Supported Plotly Traces (29 Total)
+## Supported Plotly Traces (28 Total)
 
-Mirage includes full pure-vector support for all 29 non-3D Plotly trace types:
+Mirage includes full pure-vector support for all 28 non-WebGL Plotly trace types:
 
 | Category | Supported Traces |
 | :--- | :--- |
@@ -277,9 +272,9 @@ Mirage includes full pure-vector support for all 29 non-3D Plotly trace types:
 | **Financial & Business** | `candlestick`, `ohlc`, `waterfall`, `funnel`, `funnelarea`, `indicator` (gauges, KPI big numbers) |
 | **Hierarchical Partitions** | `treemap`, `sunburst`, `icicle` |
 | **Radial / Polar** | `scatterpolar` (radar/spider), `barpolar` |
-| **Specialized Diagrams & Tables** | `sankey`, `parcats`, `parcoords`, `table`, `carpet`, `scattercarpet`, `contourcarpet` |
+| **Specialized Diagrams & Tables** | `sankey`, `parcats` (parallel categories), `table`, `carpet`, `scattercarpet`, `contourcarpet` |
 
-*(Note: 3D WebGL plots like `scatter3d`, `surface`, and `mesh3d` are excluded because their GL math shaders exceed the stack capacity of embedded QuickJS without a GPU).*
+*(Note: WebGL traces like `scatter3d`, `surface`, `mesh3d`, and `parcoords` render via GPU shader canvases and are not pure vector SVG).*
 
 ---
 
