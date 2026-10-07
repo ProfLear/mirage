@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "plotly-mirage"
-version = "0.2.0"
+version = "0.2.1"
 description = "Ultra-lightweight, browser-less static image exporter for Plotly"
 readme = "README.md"
 license = "MIT"
@@ -24,6 +24,13 @@ dependencies = [
     "quickjs>=1.19.0",
     "pillow>=9.0.0",
     "resvg-py>=0.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
 ]
 
 [project.urls]
