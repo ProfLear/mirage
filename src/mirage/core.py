@@ -127,13 +127,13 @@ def write_image(
             format = "png"
 
     fmt = format.lower().strip()
+    svg_str = to_svg(fig, width=width, height=height)
     if fmt == "svg":
-        svg_str = to_svg(fig, width=width, height=height)
         if isinstance(file, (str, os.PathLike)):
             with open(file, "w", encoding="utf-8") as f:
                 f.write(svg_str)
         else:
             file.write(svg_str.encode("utf-8"))
-    else:
-        svg_str = to_svg(fig, width=width, height=height)
-        write_raster(svg_str, file, format=fmt, width=width, height=height, scale=scale)
+        return
+
+    write_raster(svg_str, file, format=fmt, width=width, height=height, scale=scale)

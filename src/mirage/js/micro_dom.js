@@ -535,16 +535,114 @@
         return { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
     };
 
-    function parseTranslate(transform) {
-        if (!transform) return { x: 0, y: 0 };
-        var m = transform.match(/translate\(\s*([-\d.eE]+)(?:[\s,]+([-\d.eE]+))?\s*\)/);
-        if (m) {
-            return {
-                x: parseFloat(m[1]) || 0,
-                y: parseFloat(m[2]) || 0
-            };
+    function identityMatrix() {
+        return { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+    }
+
+    function multiplyMatrices(m1, m2) {
+        // Column-vector convention: result = m1 * m2 (m2 applied first).
+        return {
+            a: m1.a * m2.a + m1.c * m2.b,
+            b: m1.b * m2.a + m1.d * m2.b,
+            c: m1.a * m2.c + m1.c * m2.d,
+            d: m1.b * m2.c + m1.d * m2.d,
+            e: m1.a * m2.e + m1.c * m2.f + m1.e,
+            f: m1.b * m2.e + m1.d * m2.f + m1.f
+        };
+    }
+
+    function transformPoint(m, x, y) {
+        return {
+            x: m.a * x + m.c * y + m.e,
+            y: m.b * x + m.d * y + m.f
+        };
+    }
+
+    function translateMatrix(tx, ty) {
+        return { a: 1, b: 0, c: 0, d: 1, e: tx || 0, f: ty || 0 };
+    }
+
+    /**
+     * Parse a full SVG transform attribute into a 2D affine matrix.
+     * SVG post-multiplies the list left-to-right (M = T1*T2*...*Tn), so the
+     * rightmost transform is applied to a point first.
+     */
+    function parseTransform(transform) {
+        if (!transform) return identityMatrix();
+        var result = identityMatrix();
+        var re = /(matrix|translate|scale|rotate|skewX|skewY)\s*\(\s*([^)]*)\s*\)/g;
+        var match;
+        while ((match = re.exec(String(transform))) !== null) {
+            var type = match[1];
+            var rawArgs = match[2].trim();
+            var args = rawArgs ? rawArgs.split(/[\s,]+/).map(parseFloat) : [];
+            var m = identityMatrix();
+
+            if (type === 'matrix' && args.length >= 6) {
+                m = {
+                    a: args[0], b: args[1], c: args[2],
+                    d: args[3], e: args[4], f: args[5]
+                };
+            } else if (type === 'translate') {
+                m.e = args[0] || 0;
+                m.f = args.length > 1 ? (args[1] || 0) : 0;
+            } else if (type === 'scale') {
+                var sx = args.length > 0 && !isNaN(args[0]) ? args[0] : 1;
+                var sy = args.length > 1 && !isNaN(args[1]) ? args[1] : sx;
+                m.a = sx;
+                m.d = sy;
+            } else if (type === 'rotate') {
+                var angle = ((args[0] || 0) * Math.PI) / 180;
+                var cos = Math.cos(angle);
+                var sin = Math.sin(angle);
+                var rot = { a: cos, b: sin, c: -sin, d: cos, e: 0, f: 0 };
+                if (args.length >= 3) {
+                    var cx = args[1] || 0;
+                    var cy = args[2] || 0;
+                    // translate(cx,cy) rotate(a) translate(-cx,-cy)
+                    m = multiplyMatrices(
+                        translateMatrix(cx, cy),
+                        multiplyMatrices(rot, translateMatrix(-cx, -cy))
+                    );
+                } else {
+                    m = rot;
+                }
+            } else if (type === 'skewX') {
+                m.c = Math.tan(((args[0] || 0) * Math.PI) / 180);
+            } else if (type === 'skewY') {
+                m.b = Math.tan(((args[0] || 0) * Math.PI) / 180);
+            }
+            result = multiplyMatrices(result, m);
         }
-        return { x: 0, y: 0 };
+        return result;
+    }
+
+    /** Axis-aligned bounds of a bbox after applying an affine matrix to its corners. */
+    function transformBBox(bb, matrix) {
+        var corners = [
+            transformPoint(matrix, bb.x, bb.y),
+            transformPoint(matrix, bb.x + bb.width, bb.y),
+            transformPoint(matrix, bb.x, bb.y + bb.height),
+            transformPoint(matrix, bb.x + bb.width, bb.y + bb.height)
+        ];
+        var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (var i = 0; i < 4; i++) {
+            var p = corners[i];
+            if (p.x < minX) minX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y > maxY) maxY = p.y;
+        }
+        return {
+            x: minX,
+            y: minY,
+            width: maxX - minX,
+            height: maxY - minY,
+            left: minX,
+            top: minY,
+            right: maxX,
+            bottom: maxY
+        };
     }
 
     function getTextAnchor(node) {
@@ -700,24 +798,26 @@
             };
         }
 
-        // For groups (<g>, <svg>), aggregate children bounding boxes
+        // For groups (<g>, <svg>), aggregate children bounding boxes.
+        // Each child's transform is applied to its bbox corners (SVG getBBox on a
+        // group includes child transforms; an element's own transform is NOT part
+        // of that element's own getBBox).
         var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         var hasKids = false;
         for (var i = 0; i < this.childNodes.length; i++) {
             var child = this.childNodes[i];
             if (child.nodeType === 1 && typeof child.getBBox === 'function') {
                 var bb = child.getBBox();
-                var tr = parseTranslate(child.getAttribute('transform'));
-                var cx = bb.x + tr.x;
-                var cy = bb.y + tr.y;
-                var cw = bb.width;
-                var ch = bb.height;
+                var childMatrix = parseTransform(child.getAttribute('transform'));
+                var transformed = transformBBox(bb, childMatrix);
+                var cw = transformed.width;
+                var ch = transformed.height;
                 if (cw > 0 || ch > 0) {
                     hasKids = true;
-                    if (cx < minX) minX = cx;
-                    if (cy < minY) minY = cy;
-                    if (cx + cw > maxX) maxX = cx + cw;
-                    if (cy + ch > maxY) maxY = cy + ch;
+                    if (transformed.x < minX) minX = transformed.x;
+                    if (transformed.y < minY) minY = transformed.y;
+                    if (transformed.x + cw > maxX) maxX = transformed.x + cw;
+                    if (transformed.y + ch > maxY) maxY = transformed.y + ch;
                 }
             }
         }
@@ -738,27 +838,32 @@
 
     Element.prototype.getBoundingClientRect = function() {
         var bb = this.getBBox();
+        // Compose full ancestor matrices (including this element's transform).
+        // Walk self → root so final = T_root * ... * T_parent * T_self.
+        var matrix = identityMatrix();
         var cur = this;
-        var tx = 0, ty = 0;
         while (cur && cur.nodeType === 1) {
-            if (cur.offsetLeft) tx += cur.offsetLeft;
-            if (cur.offsetTop) ty += cur.offsetTop;
-            var tr = cur.getAttribute ? parseTranslate(cur.getAttribute('transform')) : null;
-            if (tr) {
-                tx += tr.x;
-                ty += tr.y;
+            var local = cur.getAttribute
+                ? parseTransform(cur.getAttribute('transform'))
+                : identityMatrix();
+            var ox = cur.offsetLeft || 0;
+            var oy = cur.offsetTop || 0;
+            if (ox || oy) {
+                local = multiplyMatrices(translateMatrix(ox, oy), local);
             }
+            matrix = multiplyMatrices(local, matrix);
             cur = cur.parentNode;
         }
-        var left = tx + bb.x;
-        var top = ty + bb.y;
-        var width = this.offsetWidth || this.clientWidth || bb.width;
-        var height = this.offsetHeight || this.clientHeight || bb.height;
+        var transformed = transformBBox(bb, matrix);
+        // Prefer explicit layout size when present (HTML elements); otherwise use
+        // the transformed SVG bbox so rotations expand width/height correctly.
+        var width = this.offsetWidth || this.clientWidth || transformed.width;
+        var height = this.offsetHeight || this.clientHeight || transformed.height;
         return {
-            left: left,
-            top: top,
-            right: left + width,
-            bottom: top + height,
+            left: transformed.x,
+            top: transformed.y,
+            right: transformed.x + width,
+            bottom: transformed.y + height,
             width: width,
             height: height
         };

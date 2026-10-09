@@ -11,6 +11,7 @@ import threading
 from typing import Any, Dict, List, Optional
 from PIL import Image, ImageColor, ImageDraw
 import quickjs
+from plotly.utils import PlotlyJSONEncoder
 
 from mirage.fonts import get_default_font_manager
 
@@ -174,8 +175,8 @@ class MirageEngine:
         if height is not None:
             layout_copy["height"] = height
 
-        data_json = json.dumps(data)
-        layout_json = json.dumps(layout_copy)
+        data_json = json.dumps(data, cls=PlotlyJSONEncoder)
+        layout_json = json.dumps(layout_copy, cls=PlotlyJSONEncoder)
 
         # Call mirageRender inside QuickJS
         self.context.eval(f"var __mirage_data = {json.dumps(data_json)};")
